@@ -1,0 +1,11 @@
+[Unit]
+Description=Universal Storage Collector daemon
+After=local-fs.target network-online.target
+Requires=local-fs.target network-online.target
+
+[Service]
+ExecStart=/usr/bin/java -DUSC_HOME=/opt/USC -cp /opt/USC/bin/collector.jar universalstoragecollector.collector
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

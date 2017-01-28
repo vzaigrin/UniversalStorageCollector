@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<collector>
+  <extractors>
+    <extractor name="vnxblock">
+      <blockCmd>/opt/Navisphere/bin/naviseccli -User #username -Password #password -Scope #scope -Address #address</blockCmd>
+      <methods>
+        <method name="sp">
+          <type>simple</type>
+          <objectType>sp</objectType>
+          <cmd>getall -sp</cmd>
+          <paramList>
+            <param>Prct Busy</param>
+            <param>Read_requests</param>
+            <param>Write_requests</param>
+            <param>Blocks_read</param>
+            <param>Blocks_written</param>
+          </paramList>
+        </method>
+        <method name="cache">
+          <type>simple</type>
+          <objectType>cache</objectType>
+          <cmd>getall -cache</cmd>
+          <paramList>
+            <param>Prct Dirty Cache Pages</param>
+            <param>Prct Cache Pages Owned</param>
+          </paramList>
+        </method>
+        <method name="cache2">
+          <type>simple</type>
+          <objectType>cache</objectType>
+          <cmd>cache -sp -info -perfData</cmd>
+          <paramList>
+            <param>Read Hit Ratio</param>
+            <param>Write Hit Ratio</param>
+            <param>Dirty Cache Pages (MB)</param>
+          </paramList>
+        </method>
+        <method name="fastcache">
+          <type>simple</type>
+          <objectType>fastcache</objectType>
+          <cmd>cache -fast -info</cmd>
+          <paramList>
+            <param>Percentage Dirty SPA</param>
+            <param>MBs Flushed SPA</param>
+            <param>Percentage Dirty SPB</param>
+            <param>MBs Flushed SPB</param>
+          </paramList>
+        </method>
+        <method name="port">
+          <type>flat</type>
+          <objectType>port</objectType>
+          <cmd>port -list -reads -writes -bread -bwrite -qfull</cmd>
+          <paramList>
+            <param>Reads</param>
+            <param>Writes</param>
+            <param>Blocks Read</param>
+            <param>Blocks Written</param>
+            <param>Queue Full/Busy</param>
+          </paramList>
+          <pattern>SP Name</pattern>
+          <headerList>
+            <header pos="right" sep=":"></header>
+            <header pos="right" sep=":"></header>
+          </headerList>
+        </method>
+        <method name="disk">
+          <type>flat</type>
+          <objectType>disk</objectType>
+          <cmd>getdisk -all</cmd> 
+          <paramList>
+            <param>Read Requests</param>
+            <param>Write Requests</param>
+            <param>Kbytes Read</param>
+            <param>Kbytes Written</param>
+            <param>Hard Read Errors</param>
+            <param>Hard Write Errors</param>
+            <param>Soft Read Errors</param>
+            <param>Soft Write Errors</param>
+            <param>Busy Ticks</param>
+            <param>Busy Ticks SPA</param>
+            <param>Busy Ticks SPB</param>
+            <param>Queue Length</param>
+          </paramList>
+          <pattern>^Bus [0-9]</pattern>
+          <headerList>
+            <header pos="all"></header>
+          </headerList>
+        </method>
+      </methods>
+      <replaceList>
+        <replace what="SP " value=""></replace>
+        <replace what="Bus " value=""></replace>
+        <replace what="=" value=""></replace>
+        <replace what="/" value=""></replace>
+        <replace what="Enclosure" value="_"></replace>
+        <replace what="Disk" value="_"></replace>
+        <replace what="%" value="Prct"></replace>
+        <replace what="." value="_"></replace>
+      </replaceList>
+    </extractor>
+    <extractor name="vnxfile">
+      <cmd>export NAS_DB=/nas; /nas/bin/server_stats #server -count 1 -terminationsummary only -format csv -monitor #cmd</cmd>
+      <methods>
+        <method name="basic"><cmd>basic-std</cmd><type>simple</type></method>
+        <method name="cache"><cmd>caches-std</cmd><type>simple</type></method>
+        <method name="cifs"><cmd>cifs-std</cmd><type>simple</type></method>
+        <method name="cifsOps"><cmd>cifs-std</cmd><type>simple</type></method>
+        <method name="nfs"><cmd>nfs-std</cmd><type>simple</type></method>
+        <method name="nfsOps"><cmd>nfsOps-std</cmd><type>composite</type></method>
+        <method name="disk"><cmd>diskVolumes-std</cmd><type>composite</type></method>
+        <method name="meta"><cmd>metaVolumes-std</cmd><type>composite</type></method>
+        <method name="net"><cmd>netDevices-std</cmd><type>composite</type></method>
+        <method name="cifsClient"><cmd>cifs.client</cmd><type>composite</type></method>
+        <method name="nfsClient"><cmd>nfs.client</cmd><type>composite</type></method>
+        <method name="nfsExport"><cmd>nfs.export</cmd><type>composite</type></method>
+        <method name="nfsFilesystem"><cmd>nfs.filesystem</cmd><type>composite3</type></method>
+        <method name="storeVolume"><cmd>store.volume</cmd><type>composite2</type></method>
+      </methods>
+      <replaceList>
+        <replace what="=" value=""></replace>
+        <replace what="/" value=""></replace>
+        <replace what="%" value="Prct"></replace>
+        <replace what="." value="_"></replace>
+        <replace what="CIFS " value=""></replace>
+        <replace what="SMB Operation " value=""></replace>
+        <replace what="NFS Op " value=""></replace>
+        <replace what="NFS Export " value=""></replace>
+        <replace what="NFS " value=""></replace>
+        <replace what="dVol " value=""></replace>
+        <replace what="MetaVol " value=""></replace>
+        <replace what="device " value=""></replace>
+        <replace what="Filesystem " value=""></replace>
+        <replace what="Network " value=""></replace>
+        <replace what="IP address " value=""></replace>
+        <replace what="Client " value=""></replace>
+        <replace what="id" value=""></replace>
+      </replaceList>
+    </extractor>
+    <extractor name="vplex">
+      <replaceList>
+        <replace what=" (us)" value=""></replace>
+        <replace what=" (KB/s)" value=""></replace>
+        <replace what=" (counts/s)" value=""></replace>
+        <replace what=" (counts)" value=""></replace>
+        <replace what=" (%)" value=""></replace>
+        <replace what=":" value="_"></replace>
+      </replaceList>
+    </extractor>
+    <extractor name="vnxnar">
+      <baseCmd>/opt/Navisphere/bin/naviseccli</baseCmd>
+      <listCmd>-User #username -Password #password -Scope #scope -Address #address analyzer -archive -list</listCmd>
+      <getCmd>-User #username -Password #password -Scope #scope -Address #address analyzer -archive -path #pool -file #filename -o</getCmd>
+      <dataCmd>analyzer -archivedump -data #filename -out #dataname -delim cm -header y -overwrite y</dataCmd>
+      <relCmd>analyzer -archivedump -rel #filename -out #relname -xml -overwrite y</relCmd>
+    </extractor>
+    <extractor name="vmax">
+      <replaceList>
+        <replace what="(" value=""></replace>
+        <replace what=")" value=""></replace>
+        <replace what="/" value="_"></replace>
+        <replace what="%" value="prct"></replace>
+        <replace what=":" value="_"></replace>
+        <replace what=" " value="_"></replace>
+      </replaceList>
+    </extractor>
+  </extractors>
+  <outputs>
+    <output name="carbon">
+      <address>127.0.0.1</address>
+      <port>2003</port>
+    </output>
+    <output name="influxdb">
+      <address>127.0.0.1</address>
+      <port>8086</port>
+      <dbname>usc</dbname>
+    </output>
+  </outputs>
+  <systems>
+    <system>
+      <name>array01</name>
+      <class>vnx</class>
+      <type>block</type>
+      <interval>13 hours</interval>
+      <extractor name="vnxnar">
+        <address>10.10.10.10</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <scope>0</scope>
+        <objects>
+          <object>
+            <type>sp</type>
+            <params>
+              <param long="Utilization (%)" short="util"></param>
+              <param long="Total Bandwidth (MB/s)" short="bw"></param>
+              <param long="Total Throughput (IO/s)" short="iops"></param>
+              <param long="Read Bandwidth (MB/s)" short="rbw"></param>
+              <param long="Read Throughput (IO/s)" short="riops"></param>
+              <param long="Write Bandwidth (MB/s)" short="wbw"></param>
+              <param long="Write Throughput (IO/s)" short="wiops"></param>
+              <param long="Read Size (KB)" short="rsize"></param>
+              <param long="Write Size (KB)" short="wsize"></param>
+              <param long="Queue Length" short="ql"></param>
+              <param long="Average Busy Queue Length" short="abql"></param>
+              <param long="Response Time (ms)" short="rt"></param>
+              <param long="SP Cache Dirty Pages (MB)" short="cache.dp"></param>
+              <param long="SP Cache MBs Flushed (MB/s)" short="cache.mbf"></param>
+              <param long="FAST Cache Dirty Pages (%)" short="fastcache.fcdp"></param>
+              <param long="FAST Cache MBs Flushed (MB/s)" short="fastcache.fcmbf"></param>
+            </params>
+          </object>
+          <object>
+            <type>port</type>
+            <params>
+              <param long="Total Bandwidth (MB/s)" short="bw"></param>
+              <param long="Total Throughput (IO/s)" short="iops"></param>
+              <param long="Read Bandwidth (MB/s)" short="rbw"></param>
+              <param long="Read Throughput (IO/s)" short="riops"></param>
+              <param long="Write Bandwidth (MB/s)" short="wbw"></param>
+              <param long="Write Throughput (IO/s)" short="wiops"></param>
+              <param long="Queue Full Count" short="qfull"></param>
+            </params>
+          </object>
+          <object>
+            <type>lun</type>
+            <params>
+              <param long="Total Bandwidth (MB/s)" short="bw"></param>
+              <param long="Total Throughput (IO/s)" short="iops"></param>
+              <param long="Read Bandwidth (MB/s)" short="rbw"></param>
+              <param long="Read Throughput (IO/s)" short="riops"></param>
+              <param long="Write Bandwidth (MB/s)" short="wbw"></param>
+              <param long="Write Throughput (IO/s)" short="wiops"></param>
+              <param long="Queue Length" short="ql"></param>
+              <param long="Average Seek Distance (GB)" short="asd"></param>
+              <param long="Response Time (ms)" short="rt"></param>
+            </params>
+          </object>
+          <object>
+            <type>disk</type>
+            <params>
+              <param long="Utilization (%)" short="util"></param>
+              <param long="Total Bandwidth (MB/s)" short="bw"></param>
+              <param long="Total Throughput (IO/s)" short="iops"></param>
+              <param long="Read Bandwidth (MB/s)" short="rbw"></param>
+              <param long="Read Throughput (IO/s)" short="riops"></param>
+              <param long="Write Bandwidth (MB/s)" short="wbw"></param>
+              <param long="Write Throughput (IO/s)" short="wiops"></param>
+              <param long="Queue Length" short="ql"></param>
+              <param long="Average Busy Queue Length" short="abql"></param>
+              <param long="Average Seek Distance (GB)" short="asd"></param>
+              <param long="Service Time (ms)" short="st"></param>
+            </params>
+          </object>
+        </objects>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>array01</name>
+      <class>vnx</class>
+      <type>file</type>
+      <interval>10 min</interval>
+      <extractor name="vnxfile">
+        <cs>10.10.10.12</cs>
+        <username>monitor</username>
+        <password>monitor</password>
+        <servers>
+          <server>server_2</server>
+        </servers>
+        <methods>
+          <method>basic</method>
+          <method>cache</method>
+          <method>nfs</method>
+          <method>nfsOps</method>
+          <method>nfsClient</method>
+          <method>nfsExport</method>
+          <method>nfsFilesystem</method>
+          <method>storeVolume</method>
+          <method>disk</method>
+          <method>meta</method>
+          <method>net</method>
+        </methods>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>array02</name>
+      <class>vnx</class>
+      <type>block</type>
+      <interval>10 min</interval>
+      <extractor name="vnxblock">
+        <username>monitor</username>
+        <password>monitor</password>
+        <scope>0</scope>
+        <methods>
+          <method name="sp" objectName="spa" address="10.10.20.21"></method>
+          <method name="sp" objectName="spb" address="10.10.20.22"></method>
+          <method name="cache2" objectName="spa" address="10.10.20.21"></method>
+          <method name="cache2" objectName="spb" address="10.10.20.22"></method>
+          <method name="fastcache" address="10.10.20.21"></method>
+          <method name="port" address="10.10.20.21"></method>
+          <method name="disk" address="10.10.20.21"></method>
+        </methods>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>array03</name>
+      <class>vmax</class>
+      <type>block</type>
+      <interval>1 hours</interval>
+      <extractor name="vmax">
+        <address>10.20.50.11</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <sid>000111111126</sid>
+        <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
+      </extractor>
+      <output>influxdb</output>
+    </system>
+    <system>
+      <name>array04</name>
+      <class>vmax</class>
+      <type>block</type>
+      <interval>1 hours</interval>
+      <extractor name="vmax">
+        <address>10.20.50.11</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <sid>000111111124</sid>
+        <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>array04</name>
+      <class>vmax</class>
+      <type>file</type>
+      <interval>10 min</interval>
+      <extractor name="vnxfile">
+        <cs>10.20.50.14</cs>
+        <username>monitor</username>
+        <password>monitor</password>
+        <servers>
+          <server>server_2</server>
+        </servers>
+        <methods>
+          <method>basic</method>
+          <method>cache</method>
+          <method>nfs</method>
+          <method>nfsOps</method>
+          <method>nfsClient</method>
+          <method>nfsExport</method>
+          <method>nfsFilesystem</method>
+          <method>storeVolume</method>
+          <method>disk</method>
+          <method>meta</method>
+          <method>net</method>
+        </methods>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>vplex01</name>
+      <class>vplex</class>
+      <interval>10 min</interval>
+      <extractor name="vplex">
+        <address>10.20.20.30</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <monitors>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A.csv"></monitor>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A_be.csv"></monitor>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A_fe.csv"></monitor>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A_fe-lu.csv"></monitor>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A_storage-volume.csv"></monitor>
+          <monitor director="1-1-A" file="/var/log/VPlex/cli/reports/director-1-1-A_virtual-volume.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_be.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_fe.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_fe-lu.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_storage-volume.csv"></monitor>
+          <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_virtual-volume.csv"></monitor>
+        </monitors>
+      </extractor>
+      <output>carbon</output>
+    </system>
+  </systems>
+</collector>
