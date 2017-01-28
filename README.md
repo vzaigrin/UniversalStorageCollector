@@ -15,3 +15,5 @@ To deploy this tool you should create a directory for it and create subdirectory
 And subdirectory *pool* if you plan to extract data from NAR files.
 
 To start this tool you should setup USC_HOME environment variable.
+
+See details here: https://vzaigrin.wordpress.com/2017/01/28/universal-storage-collector
