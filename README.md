@@ -7,7 +7,7 @@ This tool could extract performance information from:
 - VNX Block from NAR files;
 - VNX File;
 - VMAX from Unisphere reports;
-- VPLEX.
+- VPLEX from VPLEX's monitors.
 
 This tool could output data to Carbon (Graphite) and InfluxDB.
 
