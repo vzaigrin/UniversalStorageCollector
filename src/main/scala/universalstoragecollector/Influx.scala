@@ -53,8 +53,8 @@ class Influx(name: String, config: Map[String, String],
       .time(msg("timestamp").get.toLong, TimeUnit.SECONDS)
       .tag("name", sysConfig("name").get)
 
-    if (sysConfig("class").isDefined) point.tag("type", sysConfig("type").get)
-    if (sysConfig("type").isDefined) point.tag("class", sysConfig("class").get)
+    if (sysConfig("class").isDefined) point.tag("class", sysConfig("class").get)
+    if (sysConfig("type").isDefined) point.tag("type", sysConfig("type").get)
     if (msg("parentType").isDefined) point.tag("parentType", msg("parentType").get)
     if (msg("parentName").isDefined) point.tag("parentName", msg("parentName").get)
     if (msg("objectType").isDefined) point.tag("objectType", msg("objectType").get)

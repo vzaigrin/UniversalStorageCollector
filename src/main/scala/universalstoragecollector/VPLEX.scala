@@ -88,9 +88,9 @@ class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Out
           }  else  {
             val msg: Map[String, Option[String]] = Map(
               "parentType" -> None,
-              "parentName" -> Some(director),
+              "parentName" -> None,
               "objectType" -> None,
-              "objectName" -> None,
+              "objectName" -> Some(director),
               "timestamp" -> Some(timestamp.toString)
             )
             val data: Map[String, String] =

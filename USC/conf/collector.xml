@@ -37,7 +37,6 @@
         </method>
         <method name="fastcache">
           <type>simple</type>
-          <objectType>fastcache</objectType>
           <cmd>cache -fast -info</cmd>
           <paramList>
             <param>Percentage Dirty SPA</param>
@@ -296,7 +295,7 @@
           <method name="sp" objectName="spb" address="10.10.20.22"></method>
           <method name="cache2" objectName="spa" address="10.10.20.21"></method>
           <method name="cache2" objectName="spb" address="10.10.20.22"></method>
-          <method name="fastcache" address="10.10.20.21"></method>
+          <method name="fastcache" objectName="fastcache" address="10.10.20.21"></method>
           <method name="port" address="10.10.20.21"></method>
           <method name="disk" address="10.10.20.21"></method>
         </methods>
