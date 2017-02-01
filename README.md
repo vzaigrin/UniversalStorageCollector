@@ -13,6 +13,7 @@ This tool could output data to Carbon (Graphite) and InfluxDB.
 
 To deploy this tool you should create a directory for it and create subdirectory *conf* and *log* in it.
 And subdirectory *pool* if you plan to extract data from NAR files.
+If you plan to use InfluxDB, you should create database with dbname specified in the configuration file *collector.xml*
 
 To start this tool you should setup USC_HOME environment variable.
 
