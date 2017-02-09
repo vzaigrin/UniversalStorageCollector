@@ -119,7 +119,7 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
           Some(methods(m("name"))("objectType").asInstanceOf[String])
         else
           None),
-      "objectName" -> (if (m.contains("objectName")) Some(m("objectName")) else None),
+      "objectName" -> (if (m.contains("objectName")) Some(m("objectName")) else Some("None")),
       "timestamp" -> Some(timestamp.toString)
     )
 
@@ -127,7 +127,8 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
       (values flatMap (v => params map (p => (v, p))))
         .filter(c => c._2.r.findFirstIn(c._1).isDefined)
         .map(r =>
-          replaceByList(r._2, replaceList).replace(" ", "") -> numbers.findFirstIn(r._1).mkString)
+          replaceByList(r._2, replaceList).replace(" ", "") -> r._1.split(" ").last)
+//          replaceByList(r._2, replaceList).replace(" ", "") -> numbers.findFirstIn(r._1).mkString)
         .toMap
 
     out.out(msg, data)
@@ -170,8 +171,8 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
               (v => params map (p => (v, p))))
               .filter(c => c._2.r.findFirstIn(c._1).isDefined)
               .map(r =>
-                replaceByList(r._2, replaceList).replace(" ", "") ->
-                  numbers.findFirstIn(r._1).mkString)
+                replaceByList(r._2, replaceList).replace(" ", "") -> r._1.split(" ").last)
+//                  numbers.findFirstIn(r._1).mkString)
               .toMap
 
           out.out(msg, data)

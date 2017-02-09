@@ -107,9 +107,9 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
               val hv: List[(String, String)] = header map { h => h.replace(" ", "") } zip value
               val msg: Map[String, Option[String]] = Map(
                 "parentType" -> None,
-                "parentName" -> Some(server),
-                "objectType" -> Some(m),
-                "objectName" -> None,
+                "parentName" -> None,
+                "objectType" -> Some(server),
+                "objectName" -> Some(m),
                 "timestamp" -> Some(timestamp.toString)
               )
               val data: Map[String, String] = (hv map { l => l._1 -> l._2 }).toMap

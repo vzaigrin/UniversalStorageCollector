@@ -1,6 +1,7 @@
 package universalstoragecollector
 
 import scala.util.Properties.propOrElse
+import scala.util.Try
 import java.util.concurrent.TimeUnit
 
 import org.influxdb.{InfluxDB, InfluxDBFactory}
@@ -41,6 +42,8 @@ class Influx(name: String, config: Map[String, String],
     influxDB = InfluxDBFactory.connect("http://" + address.get + ":" + port.get)
   }
 
+  def parseDouble(s: String): Option[Double] = Try { s.toDouble }.toOption
+
   def out(msg: Map[String, Option[String]], data: Map[String, String]): Unit = {
 
     val batchPoints: BatchPoints = BatchPoints
@@ -59,7 +62,10 @@ class Influx(name: String, config: Map[String, String],
     if (msg("parentName").isDefined) point.tag("parentName", msg("parentName").get)
     if (msg("objectType").isDefined) point.tag("objectType", msg("objectType").get)
 
-    data.foreach {p => point.addField(p._1, p._2)}
+    data.foreach {p =>
+      if (parseDouble(p._2).isDefined) point.addField(p._1, parseDouble(p._2).get)
+      else point.addField(p._1, p._2)
+    }
 
     batchPoints.point(point.build())
     influxDB.write(batchPoints)
