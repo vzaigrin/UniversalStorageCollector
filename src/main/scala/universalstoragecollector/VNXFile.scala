@@ -4,6 +4,7 @@ import utils._
 
 import scala.xml._
 import fr.janalyse.ssh._
+
 import scala.util.Properties.propOrElse
 import scala.util.matching.Regex
 
@@ -74,11 +75,10 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
   def isSystemValid: Boolean = systemValid
 
   def ask(): Unit = {
-    def f3[A,C](t: (List[A],C)) = t._1.head -> (t._1.last, t._2)
     val timestamp: Long = System.currentTimeMillis / 1000
 
     servers foreach {server =>
-      systemMethods foreach { m =>
+      systemMethods foreach {m =>
 
         val cmd: String = (fileCmd.get.split(" ") map {
           case arg(_, a2) => a2 match {
@@ -100,95 +100,90 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
           val value: List[String] = result.last.replace("\"", "").split(",").toList.tail
 
           methods(m)._2 match {
+
             case "simple" =>
-              val header: List[String] = (rh.replace("\"", "").split(",") map { h =>
-                replaceByList(h, replaceList)
+              val header: List[String] = (rh.replace("\"", "").split(",") map {h =>
+                replaceByList(h, replaceList).replace(" ", "_")
               }).toList.tail
-              val hv: List[(String, String)] = header map { h => h.replace(" ", "") } zip value
-              val msg: Map[String, Option[String]] = Map(
-                "parentType" -> None,
-                "parentName" -> None,
-                "objectType" -> Some(server),
-                "objectName" -> Some(m),
-                "timestamp" -> Some(timestamp.toString)
+              val hv: List[(String, String)] =
+                header map {h => h.replace(" ", "")} zip value filter(_._2 != "")
+              val msg: Map[Int, (String, String)] = Map(
+                1 -> ("server", server),
+                2 -> ("measurement", m)
               )
-              val data: Map[String, String] = (hv map { l => l._1 -> l._2 }).toMap
-              out.out(msg, data)
+              val data: Map[String, String] = (hv map {l => l._1 -> l._2}).toMap
+              out.out(msg, timestamp, data)
 
             case "composite" =>
-              val header: List[String] = (rh.replace("\"", "").split(",") map { h =>
+              val header: List[String] = (rh.replace("\"", "").split(",") map {h =>
                 replaceByList(h, replaceList)
               }).toList.tail
-              val hv: List[(List[String], String)] = header map { h =>
-                h.replaceFirst(" ", "|").replaceFirst(" ", ".").replace(" ", "")
-                  .split("\\|").toList
-              } zip value
-              val ghv: Map[String, List[(String, (String, String))]] =
-                (hv map f3).groupBy(_._1)
-              ghv.keys foreach { k =>
-                val msg: Map[String, Option[String]] = Map(
-                  "parentType" -> None,
-                  "parentName" -> Some(server),
-                  "objectType" -> Some(m),
-                  "objectName" -> Some(k),
-                  "timestamp" -> Some(timestamp.toString)
+              val hv: List[(String, String)] = header zip value filter(_._2 != "")
+
+              hv foreach { p =>
+                val oName: String = p._1.split(" ").head
+                val oValue: String = p._1.split(" ").tail.head
+                val param: String = p._1.split(" ").tail.tail.mkString("_")
+                val msg: Map[Int, (String, String)] = Map(
+                  1 -> ("server", server),
+                  2 -> ("measurement", m),
+                  3 -> (oName, oValue)
                 )
-                val data: Map[String, String] =
-                  (ghv(k) map { v => v._2._1 -> v._2._2 }).toMap
-                out.out(msg, data)
+                val data: Map[String, String] = Map(param -> p._2)
+                out.out(msg, timestamp, data)
               }
 
             case "composite2" =>
-              val header: List[String] = (rh.replace("\"", "").split(",") map { h =>
+              val header: List[String] = (rh.replace("\"", "").split(",") map {h =>
                 replaceByList(h, replaceList)
               }).toList.tail
+              val hv: List[(String, String)] = header zip value filter(_._2 != "")
 
-              val hv: List[(List[String], String)] = header map { h =>
-                h.replaceFirst(" ", ".").replaceFirst(" ", "|").replace(" ", "")
-                  .split("\\|").toList
-              } zip value
-              val ghv: Map[String, List[(String, (String, String))]] =
-                (hv map f3).groupBy(_._1)
-              ghv.keys foreach { k =>
-                val msg: Map[String, Option[String]] = Map(
-                  "parentType" -> None,
-                  "parentName" -> Some(server),
-                  "objectType" -> Some(m),
-                  "objectName" -> Some(k),
-                  "timestamp" -> Some(timestamp.toString)
+              hv foreach { p =>
+                val oName1: String = p._1.split(" ").head
+                val oValue1: String = p._1.split(" ").tail.head
+                val oName2: String = p._1.split(" ").tail.tail.head
+                val param: String = p._1.split(" ").tail.tail.tail.tail.mkString("_")
+                val oValue2: String = p._1.split(" ").tail.tail.tail.head
+                val msg: Map[Int, (String, String)] = Map(
+                  1 -> ("server", server),
+                  2 -> ("measurement", m),
+                  3 -> (oName1, oValue1),
+                  4 -> (oName2, oValue2)
                 )
-                val data: Map[String, String] =
-                  (ghv(k) map { v => v._2._1 -> v._2._2 }).toMap
-                out.out(msg, data)
+                val data: Map[String, String] = Map(param -> p._2)
+                out.out(msg, timestamp, data)
               }
 
             case "composite3" =>
-              val header: List[String] = (rh.replace("\"", "").split(",") map { h =>
+              val header: List[String] = (rh.replace("\"", "").split(",") map {h =>
                 replaceByList(h, replaceList)
               }).toList.tail
-              val hv: List[(List[String], String)] = header map { h =>
-                h.replaceFirst(" ", ".").replaceFirst(" ", "|").replaceFirst(" ", ".")
-                  .replace(" ", "").split("\\|").toList
-              } zip value
-              val ghv: Map[String, List[(String, (String, String))]] =
-                (hv map f3).groupBy(_._1)
-              ghv.keys foreach { k =>
-                val msg: Map[String, Option[String]] = Map(
-                  "parentType" -> None,
-                  "parentName" -> Some(server),
-                  "objectType" -> Some(m),
-                  "objectName" -> Some(k),
-                  "timestamp" -> Some(timestamp.toString)
+              val hv: List[(String, String)] = header zip value filter(_._2 != "")
+
+              hv foreach { p =>
+                val oName1: String = p._1.split(" ").head
+                val oValue1: String = p._1.split(" ").tail.head
+                val oName2: String = p._1.split(" ").tail.tail.head
+                val oValue2: String = p._1.split(" ").tail.tail.tail.head
+                val oName3: String = p._1.split(" ").tail.tail.tail.tail.head
+                val oValue3: String = p._1.split(" ").tail.tail.tail.tail.tail.head
+                val param: String = p._1.split(" ").tail.tail.tail.tail.tail.tail.mkString("_")
+                val msg: Map[Int, (String, String)] = Map(
+                  1 -> ("server", server),
+                  2 -> ("measurement", m),
+                  3 -> (oName1, oValue1),
+                  4 -> (oName2, oValue2),
+                  5 -> (oName3, oValue3)
                 )
-                val data: Map[String, String] =
-                  (ghv(k) map { v => v._2._1 -> v._2._2 }).toMap
-                out.out(msg, data)
+                val data: Map[String, String] = Map(param -> p._2)
+                out.out(msg, timestamp, data)
               }
 
             case _ =>
           }
-        } else
-          log(s"$sysName: Wrong answer from SSH")
+        }  else
+          log(s"$sysName: Wrong answer from SSH on method $m")
       }
     }
   }

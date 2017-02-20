@@ -238,7 +238,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
   def proceedData(dataName: String, relName: String): Unit = {
     val format = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
 
-    val objects: Map[String, Map[String, Option[String]]] = getObjects(relName)
+    val objects: Map[String, Map[Int, (String, String)]] = getObjects(relName)
     if (objects == Map()) {
       log(s"Something wrong with relations file $relName")
       return
@@ -252,18 +252,18 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
       val cols: Array[String] = line.split(",").map(_.trim)
       val obj: String = cols(0)
       if (objects.contains(obj)) {
-        val oType: String = objects(obj)("objectType").get
+      // get objectType
+        val oType: String = objects(obj).filter(_._2._1 == "measurement").values.head._2
         if (objectsParams.contains(oType)) {
           val timestamp: Long = format.parse(cols(1)).getTime / 1000
           val opar: Map[String, String] = objectsParams(oType)
           opar.keys foreach {k =>
             if (header.contains(k))
               if (header(k) < cols.length) {
-                val msg: Map[String, Option[String]] =
-                  (objects(obj).keys map (k => k -> objects(obj)(k))).toMap +
-                  ("timestamp" -> Some(timestamp.toString))
+                val msg: Map[Int, (String, String)] =
+                  (objects(obj).keys map (k => k -> objects(obj)(k))).toMap
                 val data: Map[String, String] = Map(opar(k) -> cols(header(k)))
-                out.out(msg, data)
+                out.out(msg, timestamp, data)
               }
           }
         }
@@ -273,7 +273,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
   }
 
   // get the map of objects, its type, name and parent from the relations file
-  def getObjects(relName: String): Map[String, Map[String, Option[String]]] = {
+  def getObjects(relName: String): Map[String, Map[Int, (String, String)]] = {
     val relations: Node = try {
       trim(XML.loadFile(relName))
     } catch {
@@ -283,7 +283,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     }
 
     val types: Map[String, String] =
-      Map("SP" -> "sp", "RAID Group" -> "rg", "Pool" -> "pool",
+      Map("SP" -> "sp", "RAID Group" -> "rg_pool", "Pool" -> "rg_pool",
           "Public RaidGroup LUN" -> "lun", "Public RaidGroup LUN" -> "lun",
           "Pool Public LUN" -> "lun", "Port" -> "port", "Disk" -> "disk")
 
@@ -294,116 +294,113 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     val subSystem: NodeSeq = relations \\ "archivefile" \ "object"
 
     val objectsList: List[Map[String, Any]] =
-      ((subSystem \ "object") map {o =>
+      ((subSystem \ "object") map { o =>
         val oType: String = (o \ "@type").text
         val oName: String = (o \ "@name").text
         val dType: String = types.getOrElse(oType, oType.replace(" ", "_"))
         oType match {
           case "SP" => Map("name" -> oName,
-               "object" ->
-              Map("parentType" -> None,
-                  "parentName" -> None,
-                  "objectName" -> Some(oName.replace("SP ", "")),
-                  "objectType" -> Some(dType)))
+                           "object" ->
+                             Map(1 -> ("measurement", dType),
+                                 2 -> ("name", oName.replace("SP ", ""))))
           case _ => Map("name" -> oName,
                         "object" ->
-                          Map("parentType" -> None,
-                              "parentName" -> None,
-                              "objectName" -> Some(oName.replace(" ", "_")),
-                              "objectType" -> Some(dType)))
+                          Map(1 -> ("measurement", dType),
+                              2 -> ("name", oName.replace(" ", "_"))))
         }
       }).toList ++
-        ((subSystem \ "object") flatMap {c =>
-          val cType: String = (c \ "@type").text
-          val cName: String = (c \ "@name").text
-          val parentType: String = types.getOrElse(cType, cType.replace(" ", "_"))
-          cType match {
-            case "SP" => (c \ "object") map { o =>
-              val oType: String = (o \ "@type").text
-              val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
-              val oName: String = (o \ "@name").text
-              val parentName: String = cName.replace("SP ", "")
-              oType match {
-                case "Port" =>
-                  val objectName: String = oName match {
-                    case portPattern(p,_) => parentName + p
-                    case _ => oName
-                  }
-                  Map("name" -> oName,
-                      "object" ->
-                        Map("parentType" -> Some(parentType),
-                          "parentName" -> Some(parentName),
-                          "objectType" -> Some(objectType),
-                          "objectName" -> Some(objectName)))
-                case _ => Map()
-              }
+      ((subSystem \ "object") flatMap { c =>
+        val cType: String = (c \ "@type").text
+        val cName: String = (c \ "@name").text
+        val parentType: String = types.getOrElse(cType, cType.replace(" ", "_"))
+        cType match {
+          case "SP" => (c \ "object") map { o =>
+            val oType: String = (o \ "@type").text
+            val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
+            val oName: String = (o \ "@name").text
+            val parentName: String = cName.replace("SP ", "")
+            oType match {
+              case "Port" =>
+                val objectName: String = oName match {
+                  case portPattern(p, _) => parentName + p
+                  case _ => oName
+                }
+                Map("name" -> oName,
+                    "object" ->
+                      Map(1 -> ("parent", parentType),
+                          2 -> ("sp", parentName),
+                          3 -> ("measurement", objectType),
+                          4 -> ("name", objectName)))
+              case _ => Map()
             }
-            case "RAID Group" => (c \ "object") map { o =>
-              val oType: String = (o \ "@type").text
-              val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
-              val oName: String = (o \ "@name").text
-              val parentName: String = cName.replace("Raid Group ", "")
-              oType match {
-                case "Public RaidGroup LUN" =>
-                  val objectName: String = oName match {
-                    case lunPattern(l) => l
-                    case _ => oName
-                  }
-                  Map("name" -> oName,
-                      "object" ->
-                        Map("parentType" -> Some(parentType),
-                            "parentName" -> Some(parentName),
-                            "objectType" -> Some(objectType),
-                            "objectName" -> Some(objectName)))
-                case "Disk" =>
-                  val objectName: String = oName match {
-                    case diskPattern(b,e,d) => b + "-" + e + "-" + d
-                    case _ => oName
-                  }
-                  Map("name" -> oName,
-                      "object" ->
-                        Map("parentType" -> Some(parentType),
-                            "parentName" -> Some(parentName),
-                            "objectType" -> Some(objectType),
-                            "objectName" -> Some(objectName)))
-                case _ => Map()
-              }
+          }
+          case "RAID Group" => (c \ "object") map { o =>
+            val oType: String = (o \ "@type").text
+            val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
+            val oName: String = (o \ "@name").text
+            val parentName: String = cName.replace("Raid Group ", "RG")
+            oType match {
+              case "Public RaidGroup LUN" =>
+                val objectName: String = oName match {
+                  case lunPattern(l) => l
+                  case _ => oName
+                }
+                Map("name" -> oName,
+                    "object" ->
+                      Map(1 -> ("parent", parentType),
+                          2 -> ("rg", parentName),
+                          3 -> ("measurement", objectType),
+                          4 -> ("name", objectName)))
+              case "Disk" =>
+                val objectName: String = oName match {
+                  case diskPattern(b, e, d) => b + "-" + e + "-" + d
+                  case _ => oName
+                }
+                Map("name" -> oName,
+                    "object" ->
+                      Map(1 -> ("parent", parentType),
+                          2 -> ("rg", parentName),
+                          3 -> ("measurement", objectType),
+                          4 -> ("name", objectName)))
+              case _ => Map()
             }
-            case "Pool" => (c \ "object") map { o =>
-              val oType: String = (o \ "@type").text
-              val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
-              val oName: String = (o \ "@name").text
-              val parentName: String = cName.replace(" ", "_")
-              oType match {
-                case "Pool Public LUN" =>
-                  val objectName: String = oName match {
-                    case lunPattern(l) => l
-                    case _ => oName
-                  }
-                  Map("name" -> oName,
-                      "object" ->
-                        Map("parentType" -> Some(parentType),
-                            "parentName" -> Some(parentName),
-                            "objectType" -> Some(objectType),
-                            "objectName" -> Some(objectName)))
-                case "Disk" =>
-                  val objectName: String = oName match {
-                    case diskPattern(b,e,d) => b + "-" + e + "-" + d
-                    case _ => oName
-                  }
-                  Map("name" -> oName,
-                      "object" ->
-                        Map("parentType" -> Some(parentType),
-                            "parentName" -> Some(parentName),
-                            "objectType" -> Some(objectType),
-                            "objectName" -> Some(objectName)))
-                case _ => Map()
-              }
+          }
+          case "Pool" => (c \ "object") map { o =>
+            val oType: String = (o \ "@type").text
+            val objectType: String = types.getOrElse(oType, oType.replace(" ", "_"))
+            val oName: String = (o \ "@name").text
+            val parentName: String = cName.replace(" ", "_")
+            oType match {
+              case "Pool Public LUN" =>
+                val objectName: String = oName match {
+                  case lunPattern(l) => l
+                  case _ => oName
+                }
+                Map("name" -> oName,
+                    "object" ->
+                      Map(1 -> ("parent", parentType),
+                          2 -> ("pool", parentName),
+                          3 -> ("measurement", objectType),
+                          4 -> ("name", objectName)))
+              case "Disk" =>
+                val objectName: String = oName match {
+                  case diskPattern(b, e, d) => b + "-" + e + "-" + d
+                  case _ => oName
+                }
+                Map("name" -> oName,
+                    "object" ->
+                      Map(1 -> ("parent", parentType),
+                          2 -> ("pool", parentName),
+                          3 -> ("measurement", objectType),
+                          4 -> ("name", objectName)))
+              case _ => Map()
             }
-            case _ => Map()
-          }}).toList.filter(_ != Map()).asInstanceOf[List[Map[String, Any]]]
+          }
+          case _ => Map()
+        }
+      }).toList.filter(_ != Map()).asInstanceOf[List[Map[String, Any]]]
 
     (objectsList map (o => o("name").asInstanceOf[String] ->
-      o("object").asInstanceOf[Map[String, Option[String]]])).toMap
+      o("object").asInstanceOf[Map[Int, (String, String)]])).toMap
   }
 }

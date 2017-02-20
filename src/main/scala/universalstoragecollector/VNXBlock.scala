@@ -97,7 +97,6 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
                              -1
       }
       if (status == 0)  {
-//        val result: String = stdout mkString "\n"
         methods(m("name"))("type").asInstanceOf[String] match {
           case "simple" => simple(m, stdout)
           case "flat" => flat(m, stdout)
@@ -108,35 +107,31 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
   }
 
   def simple(m: Map[String, String], values: ListBuffer[String]): Unit = {
-//    val values: Array[String] = result.split("\n")
     val params: List[String] = methods(m("name"))("params").asInstanceOf[List[String]]
 
-    val msg: Map[String, Option[String]] = Map(
-      "parentType" -> (if (m.contains("parentType")) Some(m("parentType")) else None),
-      "parentName" -> (if (m.contains("parentName")) Some(m("parentName")) else None),
-      "objectType" ->
-        (if (methods(m("name")).contains("objectType"))
-          Some(methods(m("name"))("objectType").asInstanceOf[String])
-        else
-          None),
-      "objectName" -> (if (m.contains("objectName")) Some(m("objectName")) else Some("None")),
-      "timestamp" -> Some(timestamp.toString)
-    )
+    val msg: Map[Int, (String, String)] =
+      if (m.contains("objectName"))
+        Map(
+          1 -> ("measurement", methods(m("name"))("objectType").asInstanceOf[String]),
+          2 -> ("name", m("objectName"))
+        )
+      else
+        Map(
+          1 -> ("measurement", methods(m("name"))("objectType").asInstanceOf[String])
+        )
 
     val data: Map[String, String] =
       (values flatMap (v => params map (p => (v, p))))
         .filter(c => c._2.r.findFirstIn(c._1).isDefined)
         .map(r =>
           replaceByList(r._2, replaceList).replace(" ", "") -> r._1.split(" ").last)
-//          replaceByList(r._2, replaceList).replace(" ", "") -> numbers.findFirstIn(r._1).mkString)
         .toMap
 
-    out.out(msg, data)
+    out.out(msg, timestamp, data)
   }
 
   def flat(m: Map[String, String], values: ListBuffer[String]): Unit = {
-//    val values = result.split("\n")
-    val params = methods(m("name"))("params").asInstanceOf[List[String]]
+    val params: List[String] = methods(m("name"))("params").asInstanceOf[List[String]]
 
     val pm: Regex = methods(m("name"))("pattern").asInstanceOf[String].r
     val header: List[(String, String)] = methods(m("name"))("header")
@@ -152,17 +147,11 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
           case _ => h._1
         })).mkString
 
-      val msg: Map[String, Option[String]] = Map(
-        "parentType" -> (if (m.contains("parentType")) Some(m("parentType")) else None),
-        "parentName" -> (if (m.contains("parentName")) Some(m("parentName")) else None),
-        "objectType" ->
-          (if (methods(m("name")).contains("objectType"))
-            Some(methods(m("name"))("objectType").asInstanceOf[String])
-          else
-            None),
-        "objectName" -> Some(replaceByList(head, replaceList).replace(" ","")),
-        "timestamp" -> Some(timestamp.toString)
-      )
+      val msg: Map[Int, (String, String)] =
+        Map(
+          1 -> ("measurement", methods(m("name"))("objectType").asInstanceOf[String]),
+          2 -> ("name", replaceByList(head, replaceList).replace(" ",""))
+        )
 
       values.drop(i + header.length).takeWhile(pm.findFirstIn(_).isEmpty) foreach { c =>
         for (p <- params if p.r.findFirstIn(c).isDefined) {
@@ -172,12 +161,12 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
               .filter(c => c._2.r.findFirstIn(c._1).isDefined)
               .map(r =>
                 replaceByList(r._2, replaceList).replace(" ", "") -> r._1.split(" ").last)
-//                  numbers.findFirstIn(r._1).mkString)
               .toMap
 
-          out.out(msg, data)
+          out.out(msg, timestamp, data)
         }
       }
     }
   }
+
 }

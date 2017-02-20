@@ -76,17 +76,15 @@ class VMAX(name: String, param: Node, sysName: String, sysParam: Node, out: Outp
         else {
           if (header.length > 0) {
             val timestamp: Long = values(2).toLong / 1000
-            val msg: Map[String, Option[String]] = Map(
-              "parentType" -> None,
-              "parentName" -> Some(replaceByList(values(4), replaceList)),
-              "objectType" -> Some(replaceByList(values(5), replaceList)),
-              "objectName" -> Some(replaceByList(values(6), replaceList)),
-              "timestamp" -> Some(replaceByList(timestamp.toString, replaceList).toString)
+            val msg: Map[Int, (String, String)] = Map(
+              1 -> ("measurement", replaceByList(values(4), replaceList)),
+              2 -> ("value_type",  replaceByList(values(5), replaceList)),
+              3 -> ("instance", replaceByList(values(6), replaceList))
             )
             val data: Map[String, String] =
               (Range(7, values.length) map {i =>
                 replaceByList(header(i), replaceList) -> values(i)}).toMap
-            out.out(msg, data)
+            out.out(msg, timestamp, data)
           }
         }
       }

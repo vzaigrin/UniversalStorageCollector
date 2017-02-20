@@ -44,14 +44,11 @@ class Carbon(name: String, config: Map[String, String],
     }
   }
 
-  def out(msg: Map[String, Option[String]], data: Map[String, String]): Unit = {
-
-    val head: String = (List("parentType", "parentName", "objectType", "objectName")
-      flatMap (m => msg(m))).mkString(".")
-
+  def out(msg: Map[Int, (String, String)], timestamp: Long, data: Map[String, String]): Unit = {
+    val head: String = (msg.keysIterator.toList.sorted map (msg(_)._2)).mkString(".")
     data.foreach { p =>
       try {
-        outStream.write(s"$title.$head.${p._1} ${p._2} ${msg("timestamp").get}\r\n".getBytes)
+        outStream.write(s"$title.$head.${p._1} ${p._2} $timestamp\r\n".getBytes)
         outStream.flush()
       }  catch {
         case _: Exception => log(s"$title: Error in output to the carbon server ${address.get}:${port.get}")

@@ -65,7 +65,7 @@
         <method name="disk">
           <type>flat</type>
           <objectType>disk</objectType>
-          <cmd>getdisk -all</cmd> 
+          <cmd>getdisk -all</cmd>
           <paramList>
             <param>Read Requests</param>
             <param>Write Requests</param>
@@ -103,7 +103,7 @@
         <method name="basic"><cmd>basic-std</cmd><type>simple</type></method>
         <method name="cache"><cmd>caches-std</cmd><type>simple</type></method>
         <method name="cifs"><cmd>cifs-std</cmd><type>simple</type></method>
-        <method name="cifsOps"><cmd>cifs-std</cmd><type>simple</type></method>
+        <method name="cifsOps"><cmd>cifsOps-std</cmd><type>composite</type></method>
         <method name="nfs"><cmd>nfs-std</cmd><type>simple</type></method>
         <method name="nfsOps"><cmd>nfsOps-std</cmd><type>composite</type></method>
         <method name="disk"><cmd>diskVolumes-std</cmd><type>composite</type></method>
@@ -116,23 +116,16 @@
         <method name="storeVolume"><cmd>store.volume</cmd><type>composite2</type></method>
       </methods>
       <replaceList>
+        <replace what="NFS Op" value="NFS_Op"></replace>
+        <replace what="NFS Export" value="NFS_Export"></replace>
+        <replace what="id=" value=""></replace>
+        <replace what="IP address" value="IP_address"></replace>
+        <replace what="SMB Operation" value="SMB_Operation"></replace>
         <replace what="=" value=""></replace>
         <replace what="/" value=""></replace>
         <replace what="%" value="Prct"></replace>
         <replace what="." value="_"></replace>
-        <replace what="CIFS " value=""></replace>
-        <replace what="SMB Operation " value=""></replace>
-        <replace what="NFS Op " value=""></replace>
-        <replace what="NFS Export " value=""></replace>
-        <replace what="NFS " value=""></replace>
-        <replace what="dVol " value=""></replace>
-        <replace what="MetaVol " value=""></replace>
-        <replace what="device " value=""></replace>
-        <replace what="Filesystem " value=""></replace>
-        <replace what="Network " value=""></replace>
-        <replace what="IP address " value=""></replace>
-        <replace what="Client " value=""></replace>
-        <replace what="id" value=""></replace>
+      </replaceList>
       </replaceList>
     </extractor>
     <extractor name="vplex">
@@ -164,14 +157,27 @@
     </extractor>
   </extractors>
   <outputs>
-    <output name="carbon">
+    <output name="carbon1">
+      <type>carbon</type>
       <address>127.0.0.1</address>
       <port>2003</port>
     </output>
-    <output name="influxdb">
+    <output name="carbon2">
+      <type>carbon</type>
+      <address>10.30.20.10</address>
+      <port>2003</port>
+    </output>
+    <output name="influxdb1">
+      <type>influxdb</type>
       <address>127.0.0.1</address>
       <port>8086</port>
-      <dbname>usc</dbname>
+      <dbname>db1</dbname>
+    </output>
+    <output name="influxdb2">
+      <type>influxdb</type>
+      <address>127.0.0.1</address>
+      <port>8086</port>
+      <dbname>db2</dbname>
     </output>
   </outputs>
   <systems>
@@ -251,7 +257,7 @@
           </object>
         </objects>
       </extractor>
-      <output>carbon</output>
+      <output>carbon1</output>
     </system>
     <system>
       <name>array01</name>
@@ -279,7 +285,7 @@
           <method>net</method>
         </methods>
       </extractor>
-      <output>carbon</output>
+      <output>carbon2</output>
     </system>
     <system>
       <name>array02</name>
@@ -300,7 +306,7 @@
           <method name="disk" address="10.10.20.21"></method>
         </methods>
       </extractor>
-      <output>carbon</output>
+      <output>carbon1</output>
     </system>
     <system>
       <name>array03</name>
@@ -314,7 +320,7 @@
         <sid>000111111126</sid>
         <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
       </extractor>
-      <output>influxdb</output>
+      <output>influxdb1</output>
     </system>
     <system>
       <name>array04</name>
@@ -328,7 +334,7 @@
         <sid>000111111124</sid>
         <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
       </extractor>
-      <output>carbon</output>
+      <output>carbon1</output>
     </system>
     <system>
       <name>array04</name>
@@ -356,7 +362,7 @@
           <method>net</method>
         </methods>
       </extractor>
-      <output>carbon</output>
+      <output>carbon2</output>
     </system>
     <system>
       <name>vplex01</name>
@@ -381,7 +387,7 @@
           <monitor director="1-1-B" file="/var/log/VPlex/cli/reports/director-1-1-B_virtual-volume.csv"></monitor>
         </monitors>
       </extractor>
-      <output>carbon</output>
+      <output>influxdb2</output>
     </system>
   </systems>
 </collector>

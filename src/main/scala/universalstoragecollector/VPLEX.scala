@@ -50,52 +50,45 @@ class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Out
   def isSystemValid: Boolean = systemValid
 
   def ask(): Unit = {
-    def f3[A,C](t: (List[A],C)) = t._1.head -> (t._1.last, t._2)
     val format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
-    monitors foreach {monitor =>
+    monitors foreach { monitor =>
       val file = monitor("file")
       val director = monitor("director")
 
-      val headCmd = Array("head", "-1", file).mkString(" ")
-      val header = SSH.once(address.get, username.get, password.get)(_.execute(headCmd)).split(",")
+      val headCmd: String = Array("head", "-1", file).mkString(" ")
+      val header: List[String] =
+        (SSH.once(address.get, username.get, password.get)(_.execute(headCmd))
+          .split(",") map { h => replaceByList(h, replaceList)
+        }).toList.tail
 
-      val dataCmd = Array("tail", "-1", file).mkString(" ")
-      val value = SSH.once(address.get, username.get, password.get)(_.execute(dataCmd)).split(",")
+      val dataCmd: String = Array("tail", "-1", file).mkString(" ")
+      val value: Array[String] =
+        SSH.once(address.get, username.get, password.get)(_.execute(dataCmd)).split(",")
 
       val timestamp: Long = format.parse(value.head).getTime / 1000
+      val hv: List[(String, String)] = header zip value.tail filter (_._2 != "")
 
-      if ((header.length > 1) & (value.length > 1)) {
-        val result: List[(List[String], String)] = (header.drop(1) map {h =>
-          replaceByList(h, replaceList).replaceFirst(" ", "|").split("\\|").toList
-        } zip value.drop(1)).toList
-        val ghv: Map[String, List[(String, (String, String))]] = (result map f3).groupBy(_._1)
-
-        ghv.keys foreach {k =>
-          if (ghv(k).length > 1) {
-            val msg: Map[String, Option[String]] = Map(
-              "parentType" -> None,
-              "parentName" -> Some(director),
-              "objectType" -> None,
-              "objectName" -> Some(k),
-              "timestamp" -> Some(timestamp.toString)
+      if (hv.nonEmpty) {
+        hv foreach { p =>
+          val pSplit: Array[String] = p._1.split("\\.")
+          val measurement: String = pSplit.head
+          val mo: Array[String] = pSplit(1).split(" ")
+          if (mo.length > 1) {
+            val msg: Map[Int, (String, String)] = Map(
+              1 -> ("director", director),
+              2 -> ("measurement", measurement),
+              3 -> ("object", mo.head)
             )
-            ghv(k) foreach { v =>
-              val data: Map[String, String] =
-                (ghv(k) map {v => v._2._1 -> v._2._2}).toMap
-              out.out(msg, data)
-            }
-          }  else  {
-            val msg: Map[String, Option[String]] = Map(
-              "parentType" -> None,
-              "parentName" -> None,
-              "objectType" -> None,
-              "objectName" -> Some(director),
-              "timestamp" -> Some(timestamp.toString)
+            val data: Map[String, String] = Map(mo(1) -> p._2)
+            out.out(msg, timestamp, data)
+          } else {
+            val msg: Map[Int, (String, String)] = Map(
+              1 -> ("director", director),
+              2 -> ("measurement", measurement)
             )
-            val data: Map[String, String] =
-              (ghv(k) map {v => v._2._1 -> v._2._2}).toMap
-            out.out(msg, data)
+            val data: Map[String, String] = Map(mo.head -> p._2)
+            out.out(msg, timestamp, data)
           }
         }
       }

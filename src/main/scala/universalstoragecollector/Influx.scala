@@ -44,7 +44,9 @@ class Influx(name: String, config: Map[String, String],
 
   def parseDouble(s: String): Option[Double] = Try { s.toDouble }.toOption
 
-  def out(msg: Map[String, Option[String]], data: Map[String, String]): Unit = {
+  def out(msg: Map[Int, (String, String)], timestamp: Long, data: Map[String, String]): Unit = {
+
+    val header: Map[String, String] = (msg.values map (v => v._1 -> v._2)).toMap
 
     val batchPoints: BatchPoints = BatchPoints
       .database(dbname.get)
@@ -52,15 +54,14 @@ class Influx(name: String, config: Map[String, String],
       .consistency(ConsistencyLevel.ALL)
       .build()
 
-    val point: Builder = Point.measurement(msg("objectName").get)
-      .time(msg("timestamp").get.toLong, TimeUnit.SECONDS)
+    val point: Builder = Point.measurement(header("measurement"))
+      .time(timestamp.toLong, TimeUnit.SECONDS)
       .tag("name", sysConfig("name").get)
+      .tag("class", sysConfig("class").get)
 
-    if (sysConfig("class").isDefined) point.tag("class", sysConfig("class").get)
     if (sysConfig("type").isDefined) point.tag("type", sysConfig("type").get)
-    if (msg("parentType").isDefined) point.tag("parentType", msg("parentType").get)
-    if (msg("parentName").isDefined) point.tag("parentName", msg("parentName").get)
-    if (msg("objectType").isDefined) point.tag("objectType", msg("objectType").get)
+
+    (header.keySet - "measurement") foreach {k => point.tag(k, header(k))}
 
     data.foreach {p =>
       if (parseDouble(p._2).isDefined) point.addField(p._1, parseDouble(p._2).get)
