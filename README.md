@@ -21,8 +21,8 @@ For Unified storage system you should define separate descriptions for Block and
 To deploy this tool you should create a directory for it and create subdirectory *conf* and *log*.
 If you plan to extract data from NAR files (use *vnxnar* extractor) you should create subdirectory *pool*.
 
-If you plan to use InfluxDB, you should create database with dbname specified in the configuration file *collector.xml*
+If you plan to use InfluxDB, you should create database with *dbname* specified in the configuration file *collector.xml*
 
-To start this tool you should setup USC_HOME environment variable.
+Before start this tool you should setup USC_HOME environment variable.
 
 See details here: https://vzaigrin.wordpress.com/2017/01/28/universal-storage-collector
