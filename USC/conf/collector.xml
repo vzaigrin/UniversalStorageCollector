@@ -37,6 +37,7 @@
         </method>
         <method name="fastcache">
           <type>simple</type>
+          <objectType>fastcache</objectType>
           <cmd>cache -fast -info</cmd>
           <paramList>
             <param>Percentage Dirty SPA</param>
