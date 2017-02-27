@@ -56,7 +56,7 @@ class Influx(name: String, config: Map[String, String],
 
     val point: Builder = Point.measurement(header("measurement"))
       .time(timestamp.toLong, TimeUnit.SECONDS)
-      .tag("name", sysConfig("name").get)
+      .tag("storage", sysConfig("name").get)
       .tag("class", sysConfig("class").get)
 
     if (sysConfig("type").isDefined) point.tag("type", sysConfig("type").get)
