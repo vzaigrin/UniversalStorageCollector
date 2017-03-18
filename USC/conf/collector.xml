@@ -86,8 +86,23 @@
             <header pos="all"></header>
           </headerList>
         </method>
+        <method name="poolavailablecap">
+          <type>flat</type>
+          <objectType>pool</objectType>
+          <cmd>storagepool -list -availableCap</cmd>
+          <paramList>
+            <param>Available Capacity \(GBs\)</param>
+          </paramList>
+          <pattern>Pool Name</pattern>
+          <headerList>
+            <header pos="right" sep=":"></header>
+          </headerList>
+        </method>
       </methods>
       <replaceList>
+        <replace what="\" value=""></replace>
+        <replace what="(" value=""></replace>
+        <replace what=")" value=""></replace>
         <replace what="SP " value=""></replace>
         <replace what="Bus " value=""></replace>
         <replace what="=" value=""></replace>
@@ -182,6 +197,21 @@
     </output>
   </outputs>
   <systems>
+    <system>
+      <name> array01 </name>
+      <class>vnx</class>
+      <type>block</type>
+      <interval>1 hours</interval>
+      <extractor name="vnxblock">
+        <username>monitor</username>
+        <password>monitor</password>
+        <scope>0</scope>
+        <methods>
+          <method name="poolavailablecap" address="10.10.10.10"></method>
+        </methods>
+      </extractor>
+      <output>carbon</output>
+    </system>
     <system>
       <name>array01</name>
       <class>vnx</class>

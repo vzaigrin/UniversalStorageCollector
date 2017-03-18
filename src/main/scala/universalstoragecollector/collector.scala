@@ -109,22 +109,12 @@ object collector extends App with Logger {
     filter(s => extractors.contains(s("extractor").asInstanceOf[(String, Node)]._1) &
       outputs.contains(s("output").asInstanceOf[String]))
 
-  // To remove duplicates in the storage systems list, convert list to map, group and back to list
-  val systems = (systemList map { s => {
-    val title: String =
-      if (s.contains("type"))
-        s"${s("name").asInstanceOf[String]}.${s("type").asInstanceOf[String]}"
-      else
-        s("name").asInstanceOf[String]
-    title -> s
-  }}).groupBy(_._1).mapValues(_.head).mapValues(_._2).values.toList
-
   // Actors System
   val akkaSystem = ActorSystem("USC")
   import akkaSystem.dispatcher
 
   //  Storage systems as List of Actors
-  var storageList: List[(Serializable, String, Boolean, ActorRef)] = systems map {s => {
+  var storageList: List[(Serializable, String, Boolean, ActorRef)] = systemList map {s => {
     val duration: Serializable =
       try
         Duration(s("interval").asInstanceOf[String]).asInstanceOf[FiniteDuration]
@@ -133,14 +123,16 @@ object collector extends App with Logger {
       }
     val title: String =
       if (s.contains("type"))
-        s"${s("name").asInstanceOf[String]}.${s("type").asInstanceOf[String]}"
+        s("name").asInstanceOf[String] + "." + s("type").asInstanceOf[String] +
+          "." + s("extractor").asInstanceOf[(String, Any)]._1
       else
-        s("name").asInstanceOf[String]
+        s("name").asInstanceOf[String] + "." +
+          s("extractor").asInstanceOf[(String, Any)]._1
     val sysConfig: Map[String, Option[String]] =
       Map("name" -> Some(s("name").asInstanceOf[String]),
-        "class" -> Some(s("class").asInstanceOf[String]),
-        "type" -> { if (s.contains("type")) Some(s("type").asInstanceOf[String])
-                    else None }
+          "class" -> Some(s("class").asInstanceOf[String]),
+          "type" -> { if (s.contains("type")) Some(s("type").asInstanceOf[String])
+                      else None }
       )
     val out: Output = Output(s("output").asInstanceOf[String],
       outputs(s("output").asInstanceOf[String]),
