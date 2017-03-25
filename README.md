@@ -5,10 +5,11 @@ A tool for gathering performance information from different storage system.
 This tool could extract performance information from:
 - EMC VNX Block using naviseccli;
 - EMC VNX Block from NAR files;
-- EMC VNX File from Control Station;
+- EMC VNX File by SSH from Control Station;
 - EMC VMAX Block from Unisphere reports;
 - EMC VMAX File from Control Station (similar to VNX File);
-- EMC VPLEX from VPLEX's monitors.
+- EMC VPLEX from VPLEX's monitors;
+- EMC RecoverPoint by REST API.
 
 This tool could output data to Carbon (Graphite) and InfluxDB.
 It is possible to output to different Carbon and InfluxDB servers at same time.
@@ -26,4 +27,4 @@ If you plan to use InfluxDB, you should create database with *dbname* specified 
 
 Before start this tool you should setup USC_HOME environment variable.
 
-See details here: https://vzaigrin.wordpress.com/2017/01/28/universal-storage-collector
+See some details here: https://vzaigrin.wordpress.com/2017/01/28/universal-storage-collector
