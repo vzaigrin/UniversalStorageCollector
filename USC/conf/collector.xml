@@ -171,6 +171,9 @@
         <replace what=" " value="_"></replace>
       </replaceList>
     </extractor>
+    <extractor name="rp">
+      <baseUrl>https://#ip/fapi/rest/#ver</baseUrl>
+    </extractor>
   </extractors>
   <outputs>
     <output name="carbon1">
