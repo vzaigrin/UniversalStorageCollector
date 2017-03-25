@@ -20,6 +20,7 @@ object Extractor {
         case "vnxnar" => new VNXNar("vnxnar", param, sysName, sysParam, out)
         case "vplex" => new VPLEX("vplex", param, sysName, sysParam, out)
         case "vmax" => new VMAX("vmax", param, sysName, sysParam, out)
+        case "rp" => new RP("rp", param, sysName, sysParam, out)
         case _ => new Extractor(name, param, sysName, sysParam, out) {
                     def isValid: Boolean = false
                     def isSystemValid: Boolean = false

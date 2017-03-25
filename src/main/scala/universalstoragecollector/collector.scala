@@ -28,7 +28,6 @@ trait Logger {
 }
 
 object collector extends App with Logger {
-
   val home: String = propOrElse("USC_HOME", "")
   if (home == "") {
     println("Setup USC_HOME to run")

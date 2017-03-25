@@ -198,7 +198,7 @@
   </outputs>
   <systems>
     <system>
-      <name> array01 </name>
+      <name>array01</name>
       <class>vnx</class>
       <type>block</type>
       <interval>1 hours</interval>
@@ -359,7 +359,7 @@
       <type>block</type>
       <interval>1 hours</interval>
       <extractor name="vmax">
-        <address>10.20.50.11</address>
+        <address>10.20.50.21</address>
         <username>monitor</username>
         <password>monitor</password>
         <sid>000111111124</sid>
@@ -373,7 +373,7 @@
       <type>file</type>
       <interval>10 min</interval>
       <extractor name="vnxfile">
-        <cs>10.20.50.14</cs>
+        <cs>10.20.50.24</cs>
         <username>monitor</username>
         <password>monitor</password>
         <servers>
@@ -419,6 +419,30 @@
         </monitors>
       </extractor>
       <output>influxdb2</output>
+    </system>
+    <system>
+      <name>rp01</name>
+      <class>rp</class>
+      <interval>10 min</interval>
+      <extractor name="rp">
+        <address>10.10.10.15</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <ver>4_4</ver>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>rp02</name>
+      <class>rp</class>
+      <interval>10 min</interval>
+      <extractor name="rp">
+        <address>10.10.20.25</address>
+        <username>monitor</username>
+        <password>monitor</password>
+        <ver>5_0</ver>
+      </extractor>
+      <output>carbon</output>
     </system>
   </systems>
 </collector>
