@@ -174,9 +174,21 @@
     <extractor name="rp">
       <baseUrl>https://#ip/fapi/rest/#ver</baseUrl>
     </extractor>
+    <extractor name="storwize">
+      <methods>
+        <method name="systemstats">
+          <cmd>lssystemstats</cmd>
+          <output param="stat_name" data="stat_current"></output>
+        </method>
+        <method name="nodestats">
+          <cmd>svcinfo lsnodestats</cmd>
+          <output head="node_name" param="stat_name" data="stat_current"></output>
+        </method>
+      </methods>
+    </extractor>
   </extractors>
   <outputs>
-    <output name="carbon1">
+    <output name="carbon">
       <type>carbon</type>
       <address>127.0.0.1</address>
       <port>2003</port>
@@ -186,7 +198,7 @@
       <address>10.30.20.10</address>
       <port>2003</port>
     </output>
-    <output name="influxdb1">
+    <output name="influxdb">
       <type>influxdb</type>
       <address>127.0.0.1</address>
       <port>8086</port>
@@ -291,7 +303,7 @@
           </object>
         </objects>
       </extractor>
-      <output>carbon1</output>
+      <output>carbon</output>
     </system>
     <system>
       <name>array01</name>
@@ -340,7 +352,7 @@
           <method name="disk" address="10.10.20.21"></method>
         </methods>
       </extractor>
-      <output>carbon1</output>
+      <output>carbon</output>
     </system>
     <system>
       <name>array03</name>
@@ -354,7 +366,7 @@
         <sid>000111111126</sid>
         <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
       </extractor>
-      <output>influxdb1</output>
+      <output>influxdb</output>
     </system>
     <system>
       <name>array04</name>
@@ -368,7 +380,7 @@
         <sid>000111111124</sid>
         <reports>/opt/emc/SMAS/report/SPA/querydata</reports>
       </extractor>
-      <output>carbon1</output>
+      <output>carbon</output>
     </system>
     <system>
       <name>array04</name>
@@ -444,6 +456,17 @@
         <username>monitor</username>
         <password>monitor</password>
         <ver>5_0</ver>
+      </extractor>
+      <output>carbon</output>
+    </system>
+    <system>
+      <name>array05</name>
+      <class>storwize</class>
+      <interval>10 min</interval>
+      <extractor name="storwize">
+        <address>10.20.10.10</address>
+        <username>monitor</username>
+        <password>monitor</password>
       </extractor>
       <output>carbon</output>
     </system>

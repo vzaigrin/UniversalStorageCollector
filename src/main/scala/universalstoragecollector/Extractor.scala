@@ -21,6 +21,7 @@ object Extractor {
         case "vplex" => new VPLEX("vplex", param, sysName, sysParam, out)
         case "vmax" => new VMAX("vmax", param, sysName, sysParam, out)
         case "rp" => new RP("rp", param, sysName, sysParam, out)
+        case "storwize" => new Storwize("storwize", param, sysName, sysParam, out)
         case _ => new Extractor(name, param, sysName, sysParam, out) {
                     def isValid: Boolean = false
                     def isSystemValid: Boolean = false

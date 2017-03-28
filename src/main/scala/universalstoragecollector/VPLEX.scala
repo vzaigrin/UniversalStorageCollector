@@ -10,6 +10,7 @@ class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Out
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
   val loggerFile: String = propOrElse("USC_HOME", "") + "/log/collector-error.log"
+
   // Common parameters
   val replaceList: List[(String, String)] =
     if ((param \ "replaceList").length == 1)
