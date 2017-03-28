@@ -9,7 +9,8 @@ This tool could extract performance information from:
 - EMC VMAX Block from Unisphere reports;
 - EMC VMAX File from Control Station (similar to VNX File);
 - EMC VPLEX from VPLEX's monitors;
-- EMC RecoverPoint by REST API.
+- EMC RecoverPoint by REST API;
+- IBM Storwize by CLI.
 
 This tool could output data to Carbon (Graphite) and InfluxDB.
 It is possible to output to different Carbon and InfluxDB servers at same time.
