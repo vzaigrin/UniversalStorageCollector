@@ -5,6 +5,7 @@ import fr.janalyse.ssh.SSH
 import scala.util.Properties.propOrElse
 import scala.xml.Node
 
+// Extractor for IBM Storwize
 class Storwize(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
@@ -19,7 +20,7 @@ class Storwize(name: String, param: Node, sysName: String, sysParam: Node, out: 
     else
       Map()
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val address: Option[String] =
     if ((sysParam \ "address").length > 0)
       Some((sysParam \ "address").head.child.text)
@@ -40,33 +41,41 @@ class Storwize(name: String, param: Node, sysName: String, sysParam: Node, out: 
 
   val systemValid: Boolean = address.isDefined & username.isDefined & password.isDefined
 
+  // Validation by common parameters
   def isValid: Boolean = methods.nonEmpty
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     val timestamp: Long = System.currentTimeMillis / 1000
 
+    // For each method defined in configuration will do SSH, execute command and proceed output
     methods foreach { method =>
       val stdout: Array[String] =
         SSH.once(address.get, username.get, password.get)(_.execute(method._1)).split("\n")
-      val header = stdout.head.split(" ").filter(_ != "")
-      val values = stdout.tail
 
-      values foreach { value =>
-        val hv = (header zip value.split(" ").filter(_ != "")).toMap
+      if (stdout.length > 1) {
+        val header = stdout.head.split(" ").filter(_ != "")
+        val values = stdout.tail
 
-        val msg: Map[Int, (String, String)] =
-          if (method._2.getOrElse("head", "") != "")
-            Map(1 -> (method._2("head"), hv(method._2("head"))))
-        else
-            Map(1 -> ("node", "system"))
+        values foreach { value =>
+          val hv = (header zip value.split(" ").filter(_ != "")).toMap
 
-        if ((hv(method._2.getOrElse("param", "")) != "") &&
-          (hv(method._2.getOrElse("data", "")) != "")) {
-          val data: Map[String, String] = Map(hv(method._2("param")) -> hv(method._2("data")))
-          out.out(msg, timestamp, data)
+          val msg: Map[Int, (String, String)] =
+            if (method._2.getOrElse("head", "") != "")
+              Map(1 -> (method._2("head"), hv(method._2("head"))))
+            else
+              Map(1 -> ("node", "system"))
+
+          if ((hv(method._2.getOrElse("param", "")) != "") &&
+            (hv(method._2.getOrElse("data", "")) != "")) {
+            val data: Map[String, String] = Map(hv(method._2("param")) -> hv(method._2("data")))
+            out.out(msg, timestamp, data)
+          }
         }
-      }
+      }  else
+        log(s"$sysName: Wrong answer from SSH on method $method")
     }
   }
 }

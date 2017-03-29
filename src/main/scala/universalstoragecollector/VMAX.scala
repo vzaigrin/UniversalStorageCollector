@@ -6,6 +6,7 @@ import fr.janalyse.ssh.SSH
 
 import scala.util.Properties.propOrElse
 
+// Extractor for EMC VMAX
 class VMAX(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
@@ -19,7 +20,7 @@ class VMAX(name: String, param: Node, sysName: String, sysParam: Node, out: Outp
     else
       List(("",""))
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val address: Option[String] =
     if ((sysParam \ "address").length > 0)
       Some((sysParam \ "address").head.child.text)
@@ -53,9 +54,12 @@ class VMAX(name: String, param: Node, sysName: String, sysParam: Node, out: Outp
   val systemValid: Boolean = address.isDefined & username.isDefined & password.isDefined &
     sid.isDefined & reports.isDefined
 
+  // Validation by common parameters
   def isValid: Boolean = true
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     // get list of reports
     val reportsCmd: String = Array("ls -1 ", reports.get, "/", sid.get, "*").mkString("")

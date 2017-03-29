@@ -8,6 +8,7 @@ import fr.janalyse.ssh._
 import scala.util.Properties.propOrElse
 import scala.util.matching.Regex
 
+// Extractor for EMC VNX File
 class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
@@ -35,7 +36,7 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
     else
       List(("", ""))
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val username: Option[String] =
     if ((sysParam \ "username").length > 0)
       Some((sysParam \ "username").head.child.text)
@@ -71,15 +72,19 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
     username.isDefined & password.isDefined & cs.isDefined &
       servers.nonEmpty & systemMethods.nonEmpty
 
+  // Validation by common parameters
   def isValid: Boolean = fileCmd.isDefined & methods.nonEmpty
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     val timestamp: Long = System.currentTimeMillis / 1000
 
+    // For each server on storage system
     servers foreach {server =>
+      // proceed methods defined in configuration file
       systemMethods foreach {m =>
-
         val cmd: String = (fileCmd.get.split(" ") map {
           case arg(_, a2) => a2 match {
             case "server" => server
@@ -98,9 +103,8 @@ class VNXFile(name: String, param: Node, sysName: String, sysParam: Node, out: O
         if (result.length > 1) {
           val rh = result.head
           val value: List[String] = result.last.replace("\"", "").split(",").toList.tail
-
+          // proceed result
           methods(m)._2 match {
-
             case "simple" =>
               val header: List[String] = (rh.replace("\"", "").split(",") map {h =>
                 replaceByList(h, replaceList).replace(" ", "_")

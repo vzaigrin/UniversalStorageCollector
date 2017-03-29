@@ -9,7 +9,7 @@ import scala.io.{BufferedSource, Source}
 import java.io._
 import scala.util.Properties.propOrElse
 
-
+// Extractor for EMC VNX Nar files
 class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
@@ -49,10 +49,11 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     else
       None
 
+  // Directory 'pool' should exist in directory $USC_HOME
   val pool: String = propOrElse("USC_HOME", "") + "/pool"
   val poolValid: Boolean = new File(pool).isDirectory
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val address: Option[String] =
     if ((sysParam \ "address").length > 0)
       Some((sysParam \ "address").head.child.text)
@@ -109,18 +110,21 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     else
       Map()
 
+  // Validation by common parameters
   def isValid: Boolean = {
     baseCmd.isDefined & listCmd.isDefined & getCmd.isDefined &
       dataCmd.isDefined & relCmd.isDefined & poolValid
   }
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     val cmd: Array[String] = s"${baseCmd.get} ${listCmd.get}".split(" ") map {
       case arg(_, a2) => cmdParam.getOrElse(a2, " ")
       case c => c
     }
-    // get the list of Nar files on the storage system
+    // Get the list of Nar files on the storage system
     val stdout = ListBuffer[String]()
     val status: Int = try { (cmd.toSeq run ProcessLogger(stdout append _)).exitValue }
     catch {
@@ -130,10 +134,10 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     if (status == 0) {
       val narList: List[String] = (stdout.tail map (s => s.split(" ").last)).toList
       if (narList.nonEmpty) {
-        // check Pool directory for file with sysName name
+        // Check Pool directory for file with sysName name
         val poolFiles: List[String] = getListOfFiles(pool)
 
-        // get the name of the last processed Nar file
+        // Get the name of the last processed Nar file
         val lastNar: String =
           if (poolFiles.nonEmpty & poolFiles.contains(sysName)) {
             val fileLines: List[String] = Source.fromFile(pool ++ "/" ++ sysName).getLines.toList
@@ -141,7 +145,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
             else ""
           } else ""
 
-        // select Nar file to proceed (we will proceed only one)
+        // Select Nar file to proceed (we will proceed only one)
         val doNar: String =
           if (lastNar != "") {
             val afterLast: List[String] = narList.filter(_ > lastNar)
@@ -149,7 +153,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
             else "" // no more Nar files to proceed
           } else narList.last
 
-        // proceed Nar files
+        // Proceed selected Nar file
         if (doNar != "")
           if (proceedNar(doNar) == 0) {
             val file = new File(pool ++ "/" ++ sysName)
@@ -163,6 +167,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
 
   }
 
+  // Get list of files in directory
   def getListOfFiles(dir: String): List[String] = {
     val d = new File(dir)
     if (d.exists && d.isDirectory) {
@@ -170,7 +175,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     } else List()
   }
 
-  // proceed Nar file
+  // Proceed Nar file
   def proceedNar(filename: String): Int = {
     val getCmdParam: Map[String, String] =
       Map("address" -> address.get, "username" -> username.get,
@@ -190,7 +195,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     if (getStatus == 0) {
       val dataCmdParam: Map[String, String] =
         Map("filename" -> (pool + "/" + filename),
-          "dataname" -> (pool + "/" + sysName + ".csv"))
+            "dataname" -> (pool + "/" + sysName + ".csv"))
 
       val dataCmdArray: Array[String] = s"${baseCmd.get} ${dataCmd.get}".split(" ") map {
         case arg(_, a2) => dataCmdParam.getOrElse(a2, " ")
@@ -207,7 +212,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
 
       val relCmdParam: Map[String, String] =
         Map("filename" -> (pool + "/" + filename),
-          "relname" -> (pool + "/" + sysName + ".xml"))
+            "relname" -> (pool + "/" + sysName + ".xml"))
 
       val relCmdArray: Array[String] = s"${baseCmd.get} ${relCmd.get}".split(" ") map {
         case arg(_, a2) => relCmdParam.getOrElse(a2, " ")
@@ -234,7 +239,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     0
   }
 
-  // proceed CSV file extracted from NAR file
+  // Proceed CSV file extracted from NAR file
   def proceedData(dataName: String, relName: String): Unit = {
     val format = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
 
@@ -272,7 +277,7 @@ class VNXNar(name: String, param: Node, sysName: String, sysParam: Node, out: Ou
     bufferedSource.close
   }
 
-  // get the map of objects, its type, name and parent from the relations file
+  // Get the map of objects, its type, name and parent from the relations file
   def getObjects(relName: String): Map[String, Map[Int, (String, String)]] = {
     val relations: Node = try {
       trim(XML.loadFile(relName))

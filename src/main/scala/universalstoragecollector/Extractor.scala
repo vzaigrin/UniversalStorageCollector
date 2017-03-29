@@ -2,6 +2,7 @@ package universalstoragecollector
 
 import scala.xml._
 
+// Template for extractors
 abstract class Extractor(name: String, param: Node,
                          sysName: String, sysParam: Node = <node></node>,
                          out: Output = Output("", Map(), Map())) {
@@ -10,6 +11,7 @@ abstract class Extractor(name: String, param: Node,
   def ask(): Unit
 }
 
+// Known extractors are listed here
 object Extractor {
   def apply(name: String, param: Node,
             sysName: String = "", sysParam: Node = <node></node>,

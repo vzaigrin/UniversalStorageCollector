@@ -1,5 +1,6 @@
 package universalstoragecollector
 
+// Template for outputs
 abstract class Output(name: String, config: Map[String, String],
                       sysConfig: Map[String, Option[String]] = Map()) {
   def isValid: Boolean
@@ -8,6 +9,7 @@ abstract class Output(name: String, config: Map[String, String],
   def stop(): Unit
 }
 
+// Known outputs are listed here
 object Output {
   def apply(name: String, config: Map[String, String],
             sysConfig: Map[String, Option[String]] = Map()): Output = {

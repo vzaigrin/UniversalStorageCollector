@@ -9,12 +9,14 @@ import org.influxdb.InfluxDB.ConsistencyLevel
 import org.influxdb.dto.Point.Builder
 import org.influxdb.dto.{BatchPoints, Point}
 
+// Output to InfluxDB
 class Influx(name: String, config: Map[String, String],
                sysConfig: Map[String, Option[String]])
   extends Output(name, config, sysConfig) with Logger {
 
   val loggerFile: String = propOrElse("USC_HOME", "") + "log/collector-error.log"
 
+  // Common parameters
   val address: Option[String] =
     if (config.contains("address"))
       Some(config("address"))
@@ -35,15 +37,19 @@ class Influx(name: String, config: Map[String, String],
 
   var influxDB: InfluxDB = _
 
+  // Validation by common parameters
   def isValid: Boolean = config.contains("address") & config.contains("port") &
     config.contains("dbname")
 
+  // Connection initialization before data output
   def start(): Unit = {
     influxDB = InfluxDBFactory.connect("http://" + address.get + ":" + port.get)
   }
 
+  // Convert numbers in data from String type to Double type
   def parseDouble(s: String): Option[Double] = Try { s.toDouble }.toOption
 
+  // Output data comes in 'msg' and 'data' structures
   def out(msg: Map[Int, (String, String)], timestamp: Long, data: Map[String, String]): Unit = {
 
     val header: Map[String, String] = (msg.values map (v => v._1 -> v._2)).toMap
@@ -72,6 +78,7 @@ class Influx(name: String, config: Map[String, String],
     influxDB.write(batchPoints)
   }
 
+  // Closing connection after data output
   def stop(): Unit = {
     influxDB.close()
   }

@@ -4,12 +4,14 @@ import java.io.OutputStream
 import java.net.Socket
 import scala.util.Properties.propOrElse
 
+// Output to Carbon (Graphite)
 class Carbon(name: String, config: Map[String, String],
              sysConfig: Map[String, Option[String]])
   extends Output(name, config, sysConfig) with Logger {
 
   val loggerFile: String = propOrElse("USC_HOME", "") + "/log/collector-error.log"
 
+  // Common parameters
   val address: Option[String] =
     if (config.contains("address"))
       Some(config("address"))
@@ -22,14 +24,17 @@ class Carbon(name: String, config: Map[String, String],
     else
       None
 
+  // Parameters for concrete storage system
   val title: String = (List("class", "name", "type")
     flatMap (sysConfig.getOrElse(_, None))).mkString(".")
 
   var sock: Socket = _
   var outStream: OutputStream = _
 
+  // Validation by common parameters
   def isValid: Boolean = address.isDefined & config.contains("port")
 
+  // Connection initialization before data output
   def start(): Unit = {
     sock = try {
       new Socket(address.get, port.get)
@@ -44,6 +49,7 @@ class Carbon(name: String, config: Map[String, String],
     }
   }
 
+  // Output data comes in 'msg' and 'data' structures
   def out(msg: Map[Int, (String, String)], timestamp: Long, data: Map[String, String]): Unit = {
     val head: String = (msg.keysIterator.toList.sorted map (msg(_)._2)).mkString(".")
     data.foreach { p =>
@@ -56,6 +62,7 @@ class Carbon(name: String, config: Map[String, String],
     }
   }
 
+  // Closing connection after data output
   def stop(): Unit = {
     if (sock != null) sock.close()
   }

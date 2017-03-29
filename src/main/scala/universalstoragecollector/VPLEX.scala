@@ -6,6 +6,7 @@ import scala.xml._
 import fr.janalyse.ssh.SSH
 import scala.util.Properties.propOrElse
 
+// Extractor for EMC VPLEX
 class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName, sysParam, out) with Logger {
 
@@ -19,7 +20,7 @@ class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Out
     else
       List(("",""))
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val address: Option[String] =
     if ((sysParam \ "address").length > 0)
       Some((sysParam \ "address").head.child.text)
@@ -47,12 +48,16 @@ class VPLEX(name: String, param: Node, sysName: String, sysParam: Node, out: Out
   val systemValid: Boolean = address.isDefined & username.isDefined & password.isDefined &
     monitors.nonEmpty
 
+  // Validation by common parameters
   def isValid: Boolean = true
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     val format = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
 
+    // For each monitor defined in configuration will do SSH, execute command and proceed output
     monitors foreach { monitor =>
       val file = monitor("file")
       val director = monitor("director")

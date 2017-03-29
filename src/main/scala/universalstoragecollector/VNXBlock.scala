@@ -7,6 +7,7 @@ import collection.mutable.ListBuffer
 import scala.util.Properties.propOrElse
 import scala.util.matching.Regex
 
+// Extractor for EMC VNX Block
 class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: Output)
   extends Extractor(name, param, sysName: String, sysParam, out) with Logger {
 
@@ -43,7 +44,7 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
     else
       List(("", ""))
 
-  // Concrete Storage system parameters
+  // Concrete storage system parameters
   val username: Option[String] =
     if ((sysParam \ "username").length > 0)
       Some((sysParam \ "username").head.child.text)
@@ -78,12 +79,16 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
     else
       Map()
 
+  // Validation by common parameters
   def isValid: Boolean = blockCmd.isDefined & methods.nonEmpty
+  // Validation by concrete storage system parameters
   def isSystemValid: Boolean = systemValid
 
+  // Extracting data from storage system
   def ask(): Unit = {
     timestamp = System.currentTimeMillis / 1000
 
+    // Proceed each method defined in configuration will
     systemMethods foreach {m => {
       val baseCmd: Array[String] = blockCmd.get.split(" ") map {
         case arg(_, a2) => cmdParam.getOrElse(a2, m.getOrElse(a2, " "))
@@ -106,6 +111,7 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
     }}
   }
 
+  // 'simple' is a method for parsing output with only parameters
   def simple(m: Map[String, String], values: ListBuffer[String]): Unit = {
     val params: List[String] = methods(m("name"))("params").asInstanceOf[List[String]]
 
@@ -130,6 +136,7 @@ class VNXBlock(name: String, param: Node, sysName: String, sysParam: Node, out: 
     out.out(msg, timestamp, data)
   }
 
+  // 'flat' is a method for parsing output where parameters follow objects (ports, disks, etc.)
   def flat(m: Map[String, String], values: ListBuffer[String]): Unit = {
     val params: List[String] = methods(m("name"))("params").asInstanceOf[List[String]]
 

@@ -27,19 +27,24 @@ trait Logger {
   }
 }
 
+// Main object
 object collector extends App with Logger {
+
+  // USC_HOME is a environment variable pointing to directory where this tool is deployed
   val home: String = propOrElse("USC_HOME", "")
   if (home == "") {
     println("Setup USC_HOME to run")
     sys.exit(-1)
   }
 
+  // Configuration file should be in directory $USC_HOME/conf
   val configFile: String =  home + "/conf/collector.xml"
   if (!new File(configFile).exists) {
     println(s"Error: no configure file $configFile")
     sys.exit(-1)
   }
 
+  // Parsing  configuration file, exit in unsuccessful parsing
   val config: Node = try {
     trim(XML.loadFile(configFile))
   } catch {
@@ -48,6 +53,7 @@ object collector extends App with Logger {
       sys.exit(-1)
   }
 
+  // Logging file will be created in directory $USC_HOME/log
   val loggerFile: String = home + "/log/collector-error.log"
 
   // Extractors
@@ -56,6 +62,8 @@ object collector extends App with Logger {
     log(s"Error: no extractors in the file $configFile")
     sys.exit(-1)
   }
+
+  // Get list of extractors, filter out incorrect extractors
   var extractors: Map[String, Node] = ((config \ "extractors").head.child map
     (c => c.attributes("name").toString.toLowerCase -> c)).toMap
 
@@ -63,13 +71,14 @@ object collector extends App with Logger {
     foreach(e => log(s"Incorrect Extractor definition: ${e._1}"))
   extractors = extractors.filter(e => Extractor(e._1, e._2).isValid)
 
+  // Outputs
   if ((config \ "outputs").length < 1) {
     println(s"Error: no outputs in the file $configFile")
     log(s"Error: no outputs in the file $configFile")
     sys.exit(-1)
   }
 
-  // Outputs
+  // Get list of outputs, filter out incorrect outputs
   var outputs: Map[String, Map[String, String]] =
     ((config \ "outputs").head.child map (c =>
       c.attributes("name").toString.toLowerCase -> (c.child map (ch =>
@@ -81,13 +90,14 @@ object collector extends App with Logger {
     foreach(o => log(s"Incorrect Output definition: ${o._1}"))
   outputs = outputs.filter(o => Output(o._1, o._2).isValid)
 
+  // Storage systems
   if ((config \ "systems").length < 1) {
     println(s"Error: no systems in the file $configFile")
     log(s"Error: no systems in the file $configFile")
     sys.exit(-1)
   }
 
-  // Storage systems
+  // Get list of storage systems, filter out systems with incorrect extractor or output
   var systemList: List[Map[String, Any]] =
     (config \ "systems").head.child.toList map (s => (s.child map (c =>
       c.label match {
@@ -153,6 +163,7 @@ object collector extends App with Logger {
   storageList = storageList.filter(_._1 != Null).filter(_._3)
 
   // Let's go!
+  // Will send signal "ask" to each storage system with its intervals
   val actList = storageList map {s =>
     akkaSystem.scheduler.schedule(Duration("0 milliseconds").asInstanceOf[FiniteDuration],
       s._1.asInstanceOf[FiniteDuration], s._4, "ask")}
