@@ -64,9 +64,9 @@ class Storwize(name: String, param: Node, sysName: String, sysParam: Node, out: 
 
           val msg: Map[Int, (String, String)] =
             if (method._2.getOrElse("head", "") != "")
-              Map(1 -> (method._2("head"), hv(method._2("head"))))
+              Map(1 -> ("measurement", hv(method._2("head"))))
             else
-              Map(1 -> ("node", "system"))
+              Map(1 -> ("measurement", "system"))
 
           if ((hv(method._2.getOrElse("param", "")) != "") &&
             (hv(method._2.getOrElse("data", "")) != "")) {
